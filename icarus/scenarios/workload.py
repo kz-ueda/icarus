@@ -100,26 +100,47 @@ class StationaryWorkload(object):
         random.seed(seed)
         self.beta = beta
         if beta != 0:
-            degree = nx.degree(self.topology)
+            degree = nx.degree(topology)
             self.receivers = sorted(self.receivers, key=lambda x: degree[iter(topology.adj[x]).next()], reverse=True)
             self.receiver_dist = TruncatedZipfDist(beta, len(self.receivers))
 
+    # def __iter__(self):
+    #     req_counter = 0
+    #     t_event = 0.0
+    #     while req_counter < self.n_warmup + self.n_measured:
+    #         t_event += (random.expovariate(self.rate))
+    #         if self.beta == 0:
+    #             receiver = random.choice(self.receivers)
+    #         else:
+    #             receiver = self.receivers[self.receiver_dist.rv() - 1]
+    #         content = int(self.zipf.rv())
+    #         log = (req_counter >= self.n_warmup)
+    #         event = {'receiver': receiver, 'content': content, 'log': log}
+    #         yield (t_event, event)
+    #         req_counter += 1
+    #     # StopIteration is regarded as RuntimeError, and this signal may be automatically raised by __next__
+    #     # raise StopIteration()
+    #     return
+
     def __iter__(self):
-        req_counter = 0
-        t_event = 0.0
-        while req_counter < self.n_warmup + self.n_measured:
-            t_event += (random.expovariate(self.rate))
+        self.req_counter = 0
+        self.t_event = 0.0
+        return self
+
+    def __next__(self):
+        if self.req_counter < self.n_warmup + self.n_measured:
+            self.t_event += (random.expovariate(self.rate))
             if self.beta == 0:
                 receiver = random.choice(self.receivers)
             else:
                 receiver = self.receivers[self.receiver_dist.rv() - 1]
             content = int(self.zipf.rv())
-            log = (req_counter >= self.n_warmup)
+            log = (self.req_counter >= self.n_warmup)
             event = {'receiver': receiver, 'content': content, 'log': log}
-            yield (t_event, event)
-            req_counter += 1
-        raise StopIteration()
-
+            self.req_counter += 1
+            return (self.t_event, event)
+        else:
+            raise StopIteration()
 
 @register_workload('GLOBETRAFF')
 class GlobetraffWorkload(object):
@@ -172,7 +193,7 @@ class GlobetraffWorkload(object):
         self.request_file = reqs_file
         self.beta = beta
         if beta != 0:
-            degree = nx.degree(self.topology)
+            degree = nx.degree(topology)
             self.receivers = sorted(self.receivers, key=lambda x:
                                     degree[iter(topology.adj[x]).next()],
                                     reverse=True)
@@ -188,7 +209,9 @@ class GlobetraffWorkload(object):
                     receiver = self.receivers[self.receiver_dist.rv() - 1]
                 event = {'receiver': receiver, 'content': content, 'size': size}
                 yield (timestamp, event)
-        raise StopIteration()
+        # StopIteration is regarded as RuntimeError, and this signal may be automatically raised by __next__
+        # raise StopIteration()
+        return
 
 
 @register_workload('TRACE_DRIVEN')
@@ -283,7 +306,9 @@ class TraceDrivenWorkload(object):
                 yield (t_event, event)
                 req_counter += 1
                 if(req_counter >= self.n_warmup + self.n_measured):
-                    raise StopIteration()
+                    # StopIteration is regarded as RuntimeError, and this signal may be automatically raised by __next__
+                    # raise StopIteration()
+                    return
             raise ValueError("Trace did not contain enough requests")
 
 

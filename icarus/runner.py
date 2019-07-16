@@ -106,7 +106,9 @@ def run(config_file, output, config_override):
     _validate_settings(settings, freeze=True)
     # set up orchestration
     orch = Orchestrator(settings)
-    for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT, signal.SIGABRT):
+    # For windows (SIGHUP, SIGQUIT are omitted...)
+    for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGABRT):
+    # for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT, signal.SIGABRT):
         signal.signal(sig, functools.partial(handler, settings, orch, output))
     logger.info('Launching orchestrator')
     orch.run()

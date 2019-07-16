@@ -286,8 +286,12 @@ def run_scenario(settings, params, curr_exp, n_exp):
         logger.error('Received keyboard interrupt. Terminating')
         sys.exit(-signal.SIGINT)
     except Exception as e:
-        err_type = str(type(e)).split("'")[1].split(".")[1]
-        err_message = e.message
+        # e.message is obsoleted in python3
+        tb = sys.exc_info()[2]
+        err_splits = str(type(e)).split("'")[1].split(".") 
+        err_type = err_splits[1] if(len(err_splits) > 1) else err_splits[0]
+        # err_message = e.message
+        err_message = e.with_traceback(tb)
         logger.error('Experiment %d/%d | Failed | %s: %s\n%s',
                      curr_exp, n_exp, err_type, err_message,
                      traceback.format_exc())
